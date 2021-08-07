@@ -1,15 +1,9 @@
 package main
 
 import (
-	"crypto/sha256"
 	"fmt"
+	"nomadcoin/blockchain"
 )
-
-type block struct {
-	data     string
-	hash     string
-	prevHash string
-}
 
 /*
 B1
@@ -20,18 +14,25 @@ B2
 	b2Hash = {data + b1Hash}
 B3
 	b3Hash = {data + b2Hash}
+
+1번째 block
+data를 그대로 hash하고 prevHash는 비워져있음
+
+2번째 block
+prevHash, 즉, 전에 있던 hash를 hashing하고 1번째
+
 */
-//one-way function
 
 func main() {
-	genesisBlock := block{"Genesis Block", "", ""}
-	//genesisBlock is First Block
+	chain := blockchain.GetBlockchain()
 
-	hash := sha256.Sum256([]byte(genesisBlock.data + genesisBlock.prevHash))
+	chain.AddBlock("Second Block")
+	chain.AddBlock("Third Blok")
 
-	hexHash := fmt.Sprintf("%x", hash)
+	for _, block := range chain.ListOfBlock() {
+		fmt.Printf("Data: %s\n", block.Data)
+		fmt.Printf("Hash: %s\n", block.Hash)
+		fmt.Printf("PrevHash: %s\n", block.PrevHash)
 
-	genesisBlock.hash = hexHash
-
-	fmt.Printf("%v", genesisBlock.hash)
+	}
 }
