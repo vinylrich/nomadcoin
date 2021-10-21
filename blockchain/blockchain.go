@@ -13,27 +13,27 @@ type Block struct {
 }
 
 type blockchain struct {
-	blocks []*block
+	blocks []*Block
 }
 
 var b *blockchain
 var once sync.Once
 
-func (b *block) getHash() {
+func (b *Block) getHash() {
 	hash := sha256.Sum256([]byte(b.Data + b.PrevHash))
 	b.Hash = fmt.Sprintf("%x", hash)
 }
 
 func getPrevHash() string {
-	totalBlocks := len(GenerateBlockchain().blocks)
+	totalBlocks := len(GetBlockchain().blocks)
 	if totalBlocks == 0 {
 		return ""
 	}
-	return GenerateBlockchain().blocks[totalBlocks-1].Hash
+	return GetBlockchain().blocks[totalBlocks-1].Hash
 }
 
-func createBlock(data string) *block {
-	newBlock := block{data, "", getPrevHash()}
+func createBlock(data string) *Block {
+	newBlock := Block{data, "", getPrevHash()}
 	newBlock.getHash()
 	return &newBlock
 }
@@ -42,10 +42,10 @@ func (b *blockchain) AddBlock(data string) {
 	b.blocks = append(b.blocks, createBlock(data))
 }
 
-func (b *blockchain) ListOfBlocks() []*block {
+func (b *blockchain) ListOfBlocks() []*Block {
 	return b.blocks
 }
-func GenerateBlockchain() *blockchain {
+func GetBlockchain() *blockchain {
 	if b == nil {
 		//데이터베이스를 사용하면
 		//초기화단계에서 blockchain을

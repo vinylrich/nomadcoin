@@ -16,8 +16,8 @@ type homeData struct {
 const port string = ":3000"
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("templates/home.html"))
-	data := homeData{"Home", blockchain.GenerateBlockchain().ListOfBlocks()}
+	tmpl := template.Must(template.ParseGlob("templates/pages/home.gohtml"))
+	data := homeData{"Home", blockchain.GetBlockchain().ListOfBlocks()}
 	tmpl.Execute(w, data)
 }
 
