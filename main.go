@@ -2,18 +2,17 @@ package main
 
 import (
 	"fmt"
-	"nomadcoin/blockchain"
+	"log"
+	"net/http"
 )
 
-func main() {
-	chain := blockchain.GenerateBlockchain()
-	chain.AddBlock("Second Block")
-	chain.AddBlock("Third Block")
-	chain.AddBlock("Fourth Block")
+const port string = ":3000"
 
-	for _, block := range chain.ListOfBlocks() {
-		fmt.Println("Data: " + block.Data)
-		fmt.Println("Hash: " + block.Hash)
-		fmt.Println("PrevHash: " + block.PrevHash + "\n")
-	}
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "Hello index")
+}
+func main() {
+	http.HandleFunc("/", indexHandler)
+	fmt.Printf("Listening on http://localhost%s\n", port)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
