@@ -13,15 +13,21 @@ type homeData struct {
 	Blocks    []*blockchain.Block
 }
 
-const port string = ":3000"
+const (
+	port        string = ":3000"
+	templateDir string = "templates/"
+)
+
+var templates *template.Template
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseGlob("templates/pages/home.gohtml"))
 	data := homeData{"Home", blockchain.GetBlockchain().ListOfBlocks()}
-	tmpl.Execute(w, data)
+	templates.ExecuteTemplate(w, "home", data)
 }
 
 func main() {
+	templates = template.Must(template.ParseGlob(templateDir + "pages/*.gohtml"))
+	templates = template.Must(templates.ParseGlob(templateDir + "partials/*.gohtml"))
 	http.HandleFunc("/", indexHandler)
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, nil))
