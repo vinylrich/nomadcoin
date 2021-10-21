@@ -1,38 +1,53 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
-	"nomadcoin/blockchain"
 )
 
-/*
-B1
-	b1Hash = {data + "x"}
-	//data+"x" 가아닌 data+"x!"가 되면
-	b2,b3도 모두 바뀜
-B2
-	b2Hash = {data + b1Hash}
-B3
-	b3Hash = {data + b2Hash}
+type block struct {
+	data     string
+	hash     string
+	prevHash string
+}
 
-1번째 block
-data를 그대로 hash하고 prevHash는 비워져있음
+type blockchain struct {
+	blocks []block
+}
 
-2번째 block
-prevHash, 즉, 전에 있던 hash를 hashing하고 1번째
-
-*/
-
-func main() {
-	chain := blockchain.GetBlockchain()
-
-	chain.AddBlock("Second Block")
-	chain.AddBlock("Third Blok")
-
-	for _, block := range chain.ListOfBlock() {
-		fmt.Printf("Data: %s\n", block.Data)
-		fmt.Printf("Hash: %s\n", block.Hash)
-		fmt.Printf("PrevHash: %s\n", block.PrevHash)
-
+func (b *blockchain) getLastHash() string {
+	if len(b.blocks) > 0 {
+		return b.blocks[len(b.blocks)-1].hash
 	}
+	return ""
+}
+func (b *blockchain) getHash(hash string) string {
+	hashed := sha256.Sum256([]byte(hash))
+	return fmt.Sprintf("%x", hashed)
+}
+func (b *blockchain) addBlock(data string) {
+	newBlock := block{data, "", b.getLastHash()}
+	newBlock.hash = b.getHash(data + newBlock.prevHash)
+
+	b.blocks = append(b.blocks, newBlock)
+}
+func (b *blockchain) listofBlocks() {
+	for _, block := range b.blocks {
+		fmt.Printf("Data: %s\n", block.data)
+		fmt.Printf("Hash: %s\n", block.hash)
+		fmt.Printf("PrevHash: %s\n", block.prevHash)
+	}
+}
+
+/*
+b1hash=data+""
+
+b2hash=data+b1hash
+*/
+func main() {
+	chain := blockchain{}
+	chain.addBlock("Genesis Block")
+	chain.addBlock("Second Block")
+	chain.addBlock("Third Block")
+	chain.listofBlocks()
 }
