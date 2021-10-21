@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type block struct {
+type Block struct {
 	Data     string
 	Hash     string
 	PrevHash string
