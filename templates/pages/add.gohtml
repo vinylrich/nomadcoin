@@ -2,12 +2,13 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    {{template "head"}}
+    {{template "head" "Add"}}
 <body>
-    {{template "header"}}
+    {{template "header" "Add"}}
     <main>
-        <form>
-        <input type="text" placeholder="Data for your block" required />
+        <form method="POST" action ="/add">
+        <input type="text" placeholder="Data for your block" required name="data"/>
+            <button> AddBlock </button>
         </form>
     </main>
     {{template "footer"}}
