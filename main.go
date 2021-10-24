@@ -2,20 +2,21 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"nomadcoin/utils"
 )
 
 const port string = ":3000"
 
 type URLDes struct {
-	URL    string
-	Method string
-	Desc   string
+	URL     string `json:"url"`
+	Method  string `json:"method"`
+	Desc    string `json:"description"`
+	Payload string `json:"payload,omitemipty"`
 }
 
+//uppercase로 하되 json으로 보내지는 이름을
+//바꾸고 싶으면 json 태크를 사용해라
 func documentation(w http.ResponseWriter, r *http.Request) {
 	data := []URLDes{
 		{
@@ -25,14 +26,14 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 		},
 
 		{
-			URL:    "/block",
-			Method: "POST",
-			Desc:   "Create Block",
+			URL:     "/block",
+			Method:  "POST",
+			Desc:    "Create Block",
+			Payload: "data:string",
 		},
 	}
-	pbyte, err := json.Marshal(data)
-	utils.HandleError(err)
-	fmt.Fprint(w, string(pbyte))
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }
 
 func main() {
