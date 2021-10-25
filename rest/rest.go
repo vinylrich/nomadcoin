@@ -7,12 +7,16 @@ import (
 	"net/http"
 	"nomadcoin/blockchain"
 	"nomadcoin/utils"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
 var port string
 
+type errorResponse struct {
+	ErrorMessage string `json:"errorMessage"`
+}
 type url string
 
 type blockBody struct {
@@ -57,7 +61,7 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			Desc:   "GET ALL Block",
 		},
 		{
-			URL:    "/blocks/{id}",
+			URL:    "/blocks/{height}",
 			Method: "GET",
 			Desc:   "GET Specific Block",
 		},
@@ -78,9 +82,17 @@ func createBlock(w http.ResponseWriter, r *http.Request) {
 	blockchain.GetBlockchain().AddBlock(blockBody.Message)
 	w.WriteHeader(http.StatusCreated)
 }
-func getSpecificBlock(w http.ResponseWriter, r *http.Request) {
+func getBlock(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
+	id := vars["height"]
+	height, err := strconv.Atoi(id)
+	utils.HandleError(err)
+	block, err := blockchain.GetBlockchain().GetSpecificBlock(height)
+	encoder := json.NewEncoder(w)
+	if err == blockchain.ErrNotFound {
+		encoder.Encode(errorResponse{fmt.Sprint(err)})
+	}
+	encoder.Encode(block)
 }
 func Start(aPort int) {
 	router := mux.NewRouter()
@@ -88,7 +100,7 @@ func Start(aPort int) {
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
-	router.HandleFunc("/blocks/{id: [0-9]+}", getSpecificBlock).Methods("GET")
+	router.HandleFunc("/blocks/{height:[0-9]+}", getBlock).Methods("GET")
 	log.Printf("ListenAndServe http://localhost%s", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
