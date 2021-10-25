@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"nomadcoin/blockchain"
 	"nomadcoin/utils"
+
+	"github.com/gorilla/mux"
 )
 
 var port string
@@ -64,26 +66,29 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func blocks(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		w.Header().Add("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(blockchain.GetBlockchain().ListOfBlocks())
-
-	case "POST":
-		var blockBody blockBody
-		utils.HandleError(json.NewDecoder(r.Body).Decode(&blockBody))
-
-		blockchain.GetBlockchain().AddBlock(blockBody.Message)
-		w.WriteHeader(http.StatusCreated)
-	}
+func getAllBlocks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(blockchain.GetBlockchain().ListOfBlocks())
 }
 
+func createBlock(w http.ResponseWriter, r *http.Request) {
+	var blockBody blockBody
+	utils.HandleError(json.NewDecoder(r.Body).Decode(&blockBody))
+
+	blockchain.GetBlockchain().AddBlock(blockBody.Message)
+	w.WriteHeader(http.StatusCreated)
+}
+func getSpecificBlock(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+}
 func Start(aPort int) {
-	handler := http.NewServeMux()
+	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
-	handler.HandleFunc("/", documentation)
-	handler.HandleFunc("/blocks", blocks)
+	router.HandleFunc("/", documentation).Methods("GET")
+	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
+	router.HandleFunc("/blocks", createBlock).Methods("POST")
+	router.HandleFunc("/blocks/{id: [0-9]+}", getSpecificBlock).Methods("GET")
 	log.Printf("ListenAndServe http://localhost%s", port)
-	log.Fatal(http.ListenAndServe(port, handler))
+	log.Fatal(http.ListenAndServe(port, router))
 }
