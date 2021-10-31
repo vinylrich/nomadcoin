@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"nomadcoin/db"
 	"nomadcoin/utils"
@@ -16,14 +17,12 @@ type Block struct {
 	Height   int
 }
 
-func (b *Block) toBytes() []byte {
-	var blockBuffer bytes.Buffer
-	encoder := gob.NewEncoder(&blockBuffer)
-	utils.HandleError(encoder.Encode(b))
-	return blockBuffer.Bytes()
+func (b *Block) fromBytes(data []byte) {
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	utils.HandleError(decoder.Decode(b))
 }
 func (b *Block) persist() {
-	db.SaveBlock(b.Hash, b.toBytes())
+	db.SaveBlock(b.Hash, utils.ToBytes(b))
 }
 func createBlock(data string, prevHash string, height int) *Block {
 	block := &Block{
@@ -37,4 +36,18 @@ func createBlock(data string, prevHash string, height int) *Block {
 	block.Hash = fmt.Sprintf("%s", sha256.Sum256([]byte(payload)))
 	block.persist()
 	return block
+}
+
+var ErrNotFound = errors.New("block not found")
+
+func FindBlock(hash string) (*Block, error) {
+	blockBytes := db.GetBlock(hash)
+	if blockBytes == nil {
+		return nil, ErrNotFound
+	}
+
+	block := &Block{}
+	block.fromBytes(blockBytes)
+
+	return block, nil
 }

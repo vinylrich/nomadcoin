@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"nomadcoin/blockchain"
 	"nomadcoin/utils"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -82,10 +81,8 @@ func createBlock(w http.ResponseWriter, r *http.Request) {
 }
 func getBlock(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["height"]
-	height, err := strconv.Atoi(id)
-	utils.HandleError(err)
-	block, err := blockchain.GetBlockchain().GetSpecificBlock(height)
+	hash := vars["hash"]
+	block, err := blockchain.FindBlock(hash)
 	encoder := json.NewEncoder(w)
 	if err == blockchain.ErrNotFound {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})
@@ -99,7 +96,7 @@ func Start(aPort int) {
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
-	router.HandleFunc("/blocks/{height:[0-9]+}", getBlock).Methods("GET")
+	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
