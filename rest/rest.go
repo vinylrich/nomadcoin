@@ -73,7 +73,6 @@ func getAllBlocks(w http.ResponseWriter, r *http.Request) {
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
-	return
 	var blockBody blockBody
 	utils.HandleError(json.NewDecoder(r.Body).Decode(&blockBody))
 

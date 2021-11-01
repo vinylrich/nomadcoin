@@ -6,14 +6,19 @@ import (
 	"fmt"
 	"nomadcoin/db"
 	"nomadcoin/utils"
+	"strings"
 )
 
 type Block struct {
-	Data     string
-	Hash     string
-	PrevHash string
-	Height   int
+	Data       string `json:"data"`
+	Hash       string `json:"hash"`
+	PrevHash   string `json:"prevHash,omitempty"`
+	Height     int    `json:"height"`
+	Difficulty int    `json:"difficulty"`
+	Nonce      int    `json:"nonce"`
 }
+
+const difficulty int = 2
 
 func (b *Block) fromBytes(data []byte) {
 	utils.FromBytes(b, data)
@@ -21,16 +26,31 @@ func (b *Block) fromBytes(data []byte) {
 func (b *Block) persist() {
 	db.SaveBlock(b.Hash, utils.ToBytes(b))
 }
+
+func (b *Block) mine() {
+	target := strings.Repeat("0", b.Difficulty)
+	for {
+		strBlock := fmt.Sprint(b)
+		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(strBlock)))
+		fmt.Printf("Block string: %s\nHash:%s\nNonce:%d\n", strBlock, hash, b.Nonce)
+		if strings.HasPrefix(hash, target) {
+			b.Hash = hash
+			break
+		} else {
+			b.Nonce++
+		}
+	}
+}
 func createBlock(data string, prevHash string, height int) *Block {
 	block := &Block{
-		Data:     data,
-		Hash:     "",
-		PrevHash: prevHash,
-		Height:   height,
+		Data:       data,
+		Hash:       "",
+		PrevHash:   prevHash,
+		Height:     height,
+		Difficulty: difficulty,
+		Nonce:      0,
 	}
-	payload := block.Data + block.PrevHash + fmt.Sprint(block.Height)
-
-	block.Hash = fmt.Sprintf("%s", sha256.Sum256([]byte(payload)))
+	block.mine()
 	block.persist()
 	return block
 }
