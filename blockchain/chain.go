@@ -8,9 +8,15 @@ import (
 )
 
 type blockchain struct {
-	NewestHash string `json:"newestHash"`
-	Height     int    `json:"height"`
+	NewestHash        string `json:"newestHash"`
+	Height            int    `json:"height"`
+	CurrentDifficulty int    `json:"currendifficulty`
 }
+
+const (
+	defaultDifficulty  int = 2
+	difficultyInterval int = 5
+)
 
 var b *blockchain
 var once sync.Once
@@ -35,6 +41,15 @@ func (b *blockchain) Blocks() []*Block {
 	}
 	return blocks
 }
+func (b *blockchain) difficulty() int {
+	if b.Height == 0 {
+		return defaultDifficulty
+	} else if b.Height%difficultyInterval == 0 {
+
+	} else {
+		return
+	}
+}
 func Blockchain() *blockchain {
 	if b == nil {
 		//데이터베이스를 사용하면
@@ -43,7 +58,9 @@ func Blockchain() *blockchain {
 		//어떻게 생성되고, 관리되는지
 		//b는 한번만 초기화 됨(nil일때)
 		once.Do(func() {
-			b = &blockchain{"", 0}
+			b = &blockchain{
+				Height: 0,
+			}
 			// search for checkpoint on the db
 			checkpoint := db.GetBlockchain()
 			if checkpoint == nil {

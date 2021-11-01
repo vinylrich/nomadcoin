@@ -1,12 +1,11 @@
 package blockchain
 
 import (
-	"crypto/sha256"
 	"errors"
-	"fmt"
 	"nomadcoin/db"
 	"nomadcoin/utils"
 	"strings"
+	"time"
 )
 
 type Block struct {
@@ -16,9 +15,8 @@ type Block struct {
 	Height     int    `json:"height"`
 	Difficulty int    `json:"difficulty"`
 	Nonce      int    `json:"nonce"`
+	Timestamp  int    `json:"timestamp"`
 }
-
-const difficulty int = 2
 
 func (b *Block) fromBytes(data []byte) {
 	utils.FromBytes(b, data)
@@ -30,10 +28,9 @@ func (b *Block) persist() {
 func (b *Block) mine() {
 	target := strings.Repeat("0", b.Difficulty)
 	for {
-		strBlock := fmt.Sprint(b)
-		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(strBlock)))
-		fmt.Printf("Block string: %s\nHash:%s\nNonce:%d\n", strBlock, hash, b.Nonce)
+		hash := utils.Hash(b)
 		if strings.HasPrefix(hash, target) {
+			b.Timestamp = int(time.Now().Unix())
 			b.Hash = hash
 			break
 		} else {
@@ -47,9 +44,10 @@ func createBlock(data string, prevHash string, height int) *Block {
 		Hash:       "",
 		PrevHash:   prevHash,
 		Height:     height,
-		Difficulty: difficulty,
+		Difficulty: Blockchain().difficulty(),
 		Nonce:      0,
 	}
+
 	block.mine()
 	block.persist()
 	return block
