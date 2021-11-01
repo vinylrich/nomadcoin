@@ -60,7 +60,7 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			Desc:   "GET ALL Block",
 		},
 		{
-			URL:    "/blocks/{height}",
+			URL:    "/blocks/{hash}",
 			Method: "GET",
 			Desc:   "GET Specific Block",
 		},
@@ -69,20 +69,22 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllBlocks(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(blockchain.GetBlockchain().ListOfBlocks())
+	json.NewEncoder(w).Encode(blockchain.Blockchain().Blocks())
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
+	return
 	var blockBody blockBody
 	utils.HandleError(json.NewDecoder(r.Body).Decode(&blockBody))
 
-	blockchain.GetBlockchain().AddBlock(blockBody.Message)
+	blockchain.Blockchain().AddBlock(blockBody.Message)
 	w.WriteHeader(http.StatusCreated)
 }
 func getBlock(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	hash := vars["hash"]
 	block, err := blockchain.FindBlock(hash)
+	utils.HandleError(err)
 	encoder := json.NewEncoder(w)
 	if err == blockchain.ErrNotFound {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})

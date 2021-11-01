@@ -1,8 +1,7 @@
 package blockchain
 
 import (
-	"bytes"
-	"encoding/gob"
+	"fmt"
 	"nomadcoin/db"
 	"nomadcoin/utils"
 	"sync"
@@ -17,11 +16,24 @@ var b *blockchain
 var once sync.Once
 
 func (b *blockchain) fromBytes(data []byte) {
-	decoder := gob.NewDecoder(bytes.NewReader(data))
-	utils.HandleError(decoder.Decode(b))
+	utils.FromBytes(b, data)
 }
 func (b *blockchain) persist() {
 	db.SaveBlockchain(utils.ToBytes(b))
+}
+func (b *blockchain) Blocks() []*Block {
+	var blocks []*Block
+	hashCursor := b.NewestHash
+	for {
+		block, _ := FindBlock(hashCursor)
+		blocks = append(blocks, block)
+		if block.PrevHash != "" {
+			hashCursor = block.PrevHash
+		} else {
+			break
+		}
+	}
+	return blocks
 }
 func Blockchain() *blockchain {
 	if b == nil {
@@ -38,12 +50,12 @@ func Blockchain() *blockchain {
 				b.AddBlock("Genesis Block")
 
 			} else {
-
 				// restore b from bytes
 				b.fromBytes(checkpoint)
 			}
 		})
 	}
+	fmt.Println(b.NewestHash)
 	return b
 }
 

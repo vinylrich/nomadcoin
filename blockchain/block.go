@@ -1,9 +1,7 @@
 package blockchain
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"nomadcoin/db"
@@ -18,8 +16,7 @@ type Block struct {
 }
 
 func (b *Block) fromBytes(data []byte) {
-	decoder := gob.NewDecoder(bytes.NewReader(data))
-	utils.HandleError(decoder.Decode(b))
+	utils.FromBytes(b, data)
 }
 func (b *Block) persist() {
 	db.SaveBlock(b.Hash, utils.ToBytes(b))
