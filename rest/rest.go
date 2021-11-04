@@ -18,6 +18,11 @@ type errorResponse struct {
 }
 type url string
 
+type balanceResponse struct {
+	Address string `json:"address"`
+	Balance int    `json:"balance"`
+}
+
 //go에서는 상속,implement가 없기 때문에
 //reseiver를 사용해서 명시 없이 implement한다
 //아래와 같이 구현하면 url이 marshaltext,
@@ -97,11 +102,23 @@ func status(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(blockchain.Blockchain())
 }
 
-func getBalanceAddress(w http.ResponseWriter, r *http.Request) {
+func balance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
-	txOut := blockchain.Blockchain().TxOutsByAddress(address)
-	utils.HandleError(json.NewEncoder(w).Encode(txOut))
+	total := r.URL.Query().Get("total")
+	switch total {
+	case "true":
+		amount := blockchain.Blockchain().BalanceByAddress(address)
+		json.NewEncoder(w).Encode(balanceResponse{address, amount})
+	default:
+		txOut := blockchain.Blockchain().TxOutsByAddress(address)
+		utils.HandleError(json.NewEncoder(w).Encode(txOut))
+	}
+
+}
+
+func mempool(w http.ResponseWriter, r *http.Request) {
+	utils.HandleError(json.NewEncoder(w).Encode(blockchain.Mempool.Txs))
 }
 func Start(aPort int) {
 	router := mux.NewRouter()
@@ -112,8 +129,8 @@ func Start(aPort int) {
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
 	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")
-	router.HandleFunc("/balance/{address}", getBalanceAddress)
-
+	router.HandleFunc("/balance/{address}", balance).Methods("GET")
+	router.HandleFunc("/mempool", mempool)
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
