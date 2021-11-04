@@ -14,14 +14,14 @@ func HandleError(err error) {
 	}
 }
 
-func ToBytes(i interface{}) []byte {
+func Encoding(i interface{}) []byte {
 	var blockBuffer bytes.Buffer
 	encoder := gob.NewEncoder(&blockBuffer)
 	HandleError(encoder.Encode(i))
 	return blockBuffer.Bytes()
 }
 
-func FromBytes(i interface{}, data []byte) {
+func Decoding(i interface{}, data []byte) {
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	HandleError(decoder.Decode(i))
 }

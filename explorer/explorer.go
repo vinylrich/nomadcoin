@@ -20,18 +20,17 @@ const (
 var templates *template.Template
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	// data := homeData{"Home", blockchain.GetBlockchain().ListOfBlocks()}
-	// templates.ExecuteTemplate(w, "home", data)
+	data := homeData{"Home", blockchain.Blockchain().AllBlocks()}
+	templates.ExecuteTemplate(w, "home", data)
 }
 func addHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		templates.ExecuteTemplate(w, "add", nil)
 	case "POST":
-		// r.ParseForm()
-		// data := r.Form.Get("data")
-		// blockchain.GetBlockchain().AddBlock(data)
-		// http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		r.ParseForm()
+		blockchain.Blockchain().AddBlock()
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 	}
 
 }

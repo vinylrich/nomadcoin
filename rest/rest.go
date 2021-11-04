@@ -18,10 +18,6 @@ type errorResponse struct {
 }
 type url string
 
-type blockBody struct {
-	Message string `json:"data"`
-}
-
 //go에서는 상속,implement가 없기 때문에
 //reseiver를 사용해서 명시 없이 implement한다
 //아래와 같이 구현하면 url이 marshaltext,
@@ -43,40 +39,47 @@ type uRLDes struct {
 func documentation(w http.ResponseWriter, r *http.Request) {
 	data := []uRLDes{
 		{
-			URL:    "/",
+			URL:    url("/"),
 			Method: "GET",
 			Desc:   "See Documentation",
 		},
-
 		{
-			URL:     "/blocks",
+			URL:    url("/status"),
+			Method: "GET",
+			Desc:   "See the Status of the Blockchain",
+		},
+		{
+			URL:     url("/blocks"),
 			Method:  "POST",
 			Desc:    "Create Block",
 			Payload: "data:string",
 		},
 		{
-			URL:    "/blocks",
+			URL:    url("/blocks"),
 			Method: "GET",
 			Desc:   "GET ALL Block",
 		},
 		{
-			URL:    "/blocks/{hash}",
+			URL:    url("/blocks/{hash}"),
 			Method: "GET",
 			Desc:   "GET Specific Block",
+		},
+		{
+			URL:    url("/balance/{address}"),
+			Method: "GET",
+			Desc:   "Get TxOuts for an Address",
 		},
 	}
 	json.NewEncoder(w).Encode(data)
 }
 
 func getAllBlocks(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(blockchain.Blockchain().Blocks())
+	json.NewEncoder(w).Encode(blockchain.Blockchain().AllBlocks())
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
-	var blockBody blockBody
-	utils.HandleError(json.NewDecoder(r.Body).Decode(&blockBody))
 
-	blockchain.Blockchain().AddBlock(blockBody.Message)
+	blockchain.Blockchain().AddBlock()
 	w.WriteHeader(http.StatusCreated)
 }
 func getBlock(w http.ResponseWriter, r *http.Request) {
@@ -90,14 +93,27 @@ func getBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	encoder.Encode(block)
 }
+func status(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(blockchain.Blockchain())
+}
+
+func getBalanceAddress(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	address := vars["address"]
+	txOut := blockchain.Blockchain().TxOutsByAddress(address)
+	utils.HandleError(json.NewEncoder(w).Encode(txOut))
+}
 func Start(aPort int) {
 	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
 	router.Use(jsonContentTypeMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
+	router.HandleFunc("/status", status).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
 	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")
+	router.HandleFunc("/balance/{address}", getBalanceAddress)
+
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
