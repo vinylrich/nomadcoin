@@ -42,15 +42,15 @@ func (b *Block) mine() {
 }
 func createBlock(prevHash string, height int) *Block {
 	block := &Block{
-		Hash:         "",
-		PrevHash:     prevHash,
-		Height:       height,
-		Difficulty:   Blockchain().difficulty(),
-		Nonce:        0,
-		Transactions: []*Tx{makeConinbaseTx("junwoo")},
+		Hash:       "",
+		PrevHash:   prevHash,
+		Height:     height,
+		Difficulty: Blockchain().difficulty(),
+		Nonce:      0,
 	}
 
 	block.mine()
+	block.Transactions = Mempool.TxToConFirm()
 	block.persist()
 	return block
 }

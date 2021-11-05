@@ -23,6 +23,11 @@ type balanceResponse struct {
 	Balance int    `json:"balance"`
 }
 
+type addTxPayload struct {
+	To     string `json:"to"`
+	Amount int    `json:"amount"`
+}
+
 //go에서는 상속,implement가 없기 때문에
 //reseiver를 사용해서 명시 없이 implement한다
 //아래와 같이 구현하면 url이 marshaltext,
@@ -83,7 +88,6 @@ func getAllBlocks(w http.ResponseWriter, r *http.Request) {
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
-
 	blockchain.Blockchain().AddBlock()
 	w.WriteHeader(http.StatusCreated)
 }
@@ -120,17 +124,29 @@ func balance(w http.ResponseWriter, r *http.Request) {
 func mempool(w http.ResponseWriter, r *http.Request) {
 	utils.HandleError(json.NewEncoder(w).Encode(blockchain.Mempool.Txs))
 }
+
+func transaction(w http.ResponseWriter, r *http.Request) {
+	payload := &addTxPayload{}
+	utils.HandleError(json.NewDecoder(r.Body).Decode(&payload))
+	err := blockchain.Mempool.AddTx(payload.To, payload.Amount)
+	if err != nil {
+		json.NewEncoder(w).Encode(errorResponse{ErrorMessage: "Not enough funds"})
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
 func Start(aPort int) {
 	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
 	router.Use(jsonContentTypeMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
-	router.HandleFunc("/status", status).Methods("GET")
+	router.HandleFunc("/blockchain", status).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
 	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")
 	router.HandleFunc("/balance/{address}", balance).Methods("GET")
-	router.HandleFunc("/mempool", mempool)
+	router.HandleFunc("/mempool", mempool).Methods("GET")
+	router.HandleFunc("/transaction", transaction).Methods("POST")
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
