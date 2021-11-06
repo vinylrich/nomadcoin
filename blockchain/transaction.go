@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"errors"
 	"nomadcoin/utils"
 	"time"
 )
@@ -21,14 +20,20 @@ func (t *Tx) getId() {
 	t.Id = utils.Hash(t)
 }
 
+type UTxOut struct {
+	TxID   string
+	Index  int
+	amount int
+}
 type TxIn struct {
-	Owner  string
-	Amount int //to give miner
+	TxID  string `json:"txId"`
+	Index int    `json:"index"`
+	Owner string `json:"owner"`
 }
 
 type TxOut struct {
-	Owner  string
-	Amount int
+	Owner  string `json:"owner"`
+	Amount int    `json:"amount"`
 }
 
 type mempool struct {
@@ -39,7 +44,7 @@ var Mempool *mempool = &mempool{}
 
 func makeConinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
-		{"Coinbase", minerReward},
+		{"", -1, "Coinbase"},
 	}
 	txOut := []*TxOut{
 		{address, minerReward},
@@ -55,41 +60,7 @@ func makeConinbaseTx(address string) *Tx {
 }
 
 func makeTx(from, to string, amount int) (*Tx, error) {
-	if Blockchain().BalanceByAddress(from) < amount {
-		return nil, errors.New("not enough money")
-	}
-	//junwoo가 가지고 있는 balance 추출
-	var txIns []*TxIn
-	var txOuts []*TxOut
-	oldTxOuts := Blockchain().TxOutsByAddress(from) //address가 가지고 있는 tx아웃풋 추출
-	var total int
-	for _, txOut := range oldTxOuts {
-		if total > amount { //일정 금액보다 더 많이 채워지면
-			//==이 아닌 > 를 쓰는 이유는 트랙잭션이 1,1,1,1 과 같이
-			//나눠져서 amount가 있을 수 있기 때문이다
-			break
-		}
-		txIn := &TxIn{txOut.Owner, txOut.Amount} // junwoo 50 100 50
-		txIns = append(txIns, txIn)              // input에 update
-		total += txIn.Amount                     //만약 20이면 스탑
-	}
 
-	change := total - amount //30
-	if change != 0 {
-		changeTxOut := &TxOut{Owner: from, Amount: change} //잔돈
-
-		txOuts = append(txOuts, changeTxOut) //트렌잭션 새로 만듦
-	}
-	txOut := &TxOut{to, amount}
-	txOuts = append(txOuts, txOut)
-	tx := &Tx{
-		Id:        "",
-		TxIns:     txIns,
-		TxOuts:    txOuts,
-		Timestamp: int(time.Now().Unix()),
-	}
-	tx.getId()
-	return tx, nil
 }
 
 func (m *mempool) AddTx(to string, amount int) error {

@@ -69,30 +69,40 @@ func (b *blockchain) difficulty() int {
 
 }
 
-func (b *blockchain) AllTxOuts() []*TxOut {
-	var txOuts []*TxOut
-	blocks := b.AllBlocks()
-	for _, block := range blocks {
-		for _, tx := range block.Transactions {
-			txOuts = append(txOuts, tx.TxOuts...)
-		}
-	}
-	return txOuts
-}
+//아직 input에서 사용되지 않은 output
+func (b *blockchain) UTxOutsByAddress(address string) []*UTxOut {
+	//transaction이 발생할 때
+	//case 1 : 5원을 줘야하는데 5개가 있을 때
+	//1 transaction 1 input 1 output
 
-func (b *blockchain) TxOutsByAddress(address string) []*TxOut {
-	var ownedTxOuts []*TxOut
-	allTx := b.AllTxOuts()
-	for _, txOut := range allTx { //모든 트렌젝션 인덱스별로 추출
-		if txOut.Owner == address {
-			ownedTxOuts = append(ownedTxOuts, txOut) //owner가 address면 owntx에 추출한 개별 tx 넣음
+	//case 2 : 5원을 줘야하는데 10개가 있을 때
+	//잔돈을 거슬러 줘야함 -> 2개의 output 발생시킴
+	//이런 조건 하에 아무리 많아도 2개의 output만을 가질 수 있음
+
+	var uTxOuts []*UTxOut
+	createrTxs := make(map[string]bool)
+	for _, block := range b.AllBlocks() {
+		for _, tx := range block.Transactions {
+			for _, input := range tx.TxIns {
+				if input.Owner == address {
+					//output을 생성하지 않은 input을 찾아야함
+					createrTxs[input.TxID] = true //아웃풋을 사용한
+				}
+			}
+			for index, output := range tx.TxOuts {
+				if output.Owner == address {
+					if _, ok := createrTxs[tx.Id]; ok {
+						uTxOuts = append(uTxOuts, &UTxOut{tx.Id, index, output.Amount})
+					}
+				}
+			}
 		}
 	}
-	return ownedTxOuts
+	return uTxOuts
 }
 
 func (b *blockchain) BalanceByAddress(address string) int {
-	txOuts := b.TxOutsByAddress(address)
+	txOuts := b.UTxOutsByAddress(address)
 	var sumOwnedBalance int
 	for _, txOut := range txOuts {
 		sumOwnedBalance += txOut.Amount
