@@ -70,6 +70,8 @@ func (b *blockchain) difficulty() int {
 }
 
 //아직 input에서 사용되지 않은 output
+//address와 똑같은 owner 중에서 txid와 input id와 같은 것 중에서
+//false인지 true인지 판별하여 이게 output이 이미 있는지 확인하는 것
 func (b *blockchain) UTxOutsByAddress(address string) []*UTxOut {
 	//transaction이 발생할 때
 	//case 1 : 5원을 줘야하는데 5개가 있을 때
@@ -80,19 +82,23 @@ func (b *blockchain) UTxOutsByAddress(address string) []*UTxOut {
 	//이런 조건 하에 아무리 많아도 2개의 output만을 가질 수 있음
 
 	var uTxOuts []*UTxOut
+	//아직 사용되지 않은 output
 	createrTxs := make(map[string]bool)
-	for _, block := range b.AllBlocks() {
-		for _, tx := range block.Transactions {
-			for _, input := range tx.TxIns {
-				if input.Owner == address {
+	for _, block := range b.AllBlocks() { //모든 블록 불러옴
+		for _, tx := range block.Transactions { //블록 안의 모든 트랜잭션
+			for _, input := range tx.TxIns { //트랜잭션 INPUT
+				if input.Owner == address { //
 					//output을 생성하지 않은 input을 찾아야함
 					createrTxs[input.TxID] = true //아웃풋을 사용한
 				}
 			}
 			for index, output := range tx.TxOuts {
 				if output.Owner == address {
-					if _, ok := createrTxs[tx.Id]; ok {
-						uTxOuts = append(uTxOuts, &UTxOut{tx.Id, index, output.Amount})
+					if _, ok := createrTxs[tx.Id]; !ok {
+						uTxOut := &UTxOut{tx.Id, index, output.Amount}
+						if !isOnMempool(uTxOut) {
+							uTxOuts = append(uTxOuts, uTxOut)
+						}
 					}
 				}
 			}

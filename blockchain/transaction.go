@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"errors"
 	"nomadcoin/utils"
 	"time"
 )
@@ -23,7 +24,7 @@ func (t *Tx) getId() {
 type UTxOut struct {
 	TxID   string
 	Index  int
-	amount int
+	Amount int
 }
 type TxIn struct {
 	TxID  string `json:"txId"`
@@ -59,8 +60,48 @@ func makeConinbaseTx(address string) *Tx {
 	return &tx
 }
 
-func makeTx(from, to string, amount int) (*Tx, error) {
+func isOnMempool(uTxOut *UTxOut) bool {
+	exists := false
 
+	for _, tx := range Mempool.Txs {
+		for _, input := range tx.TxIns {
+			exists = input.TxID == uTxOut.TxID && input.Index == uTxOut.Index
+		}
+	}
+	return exists
+}
+
+func makeTx(sender, receiver string, amount int) (*Tx, error) {
+	if Blockchain().BalanceByAddress(sender) < amount {
+		return nil, errors.New("not Enough money")
+	}
+	var txOuts []*TxOut
+	var txIns []*TxIn
+	total := 0
+	uTxOuts := Blockchain().UTxOutsByAddress(sender)
+	for _, uTxOut := range uTxOuts {
+		if total > amount {
+			break
+		}
+		txIn := &TxIn{uTxOut.TxID, uTxOut.Index, sender}
+		txIns = append(txIns, txIn)
+		total += uTxOut.Amount
+	}
+	if change := total - amount; change != 0 {
+		changeTxOut := &TxOut{sender, change}
+		txOuts = append(txOuts, changeTxOut)
+	}
+	txOut := &TxOut{receiver, amount}
+	txOuts = append(txOuts, txOut)
+
+	tx := &Tx{
+		Id:        "",
+		Timestamp: int(time.Now().Unix()),
+		TxIns:     txIns,
+		TxOuts:    txOuts,
+	}
+	tx.getId()
+	return tx, nil
 }
 
 func (m *mempool) AddTx(to string, amount int) error {
