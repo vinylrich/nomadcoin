@@ -31,7 +31,7 @@ type addTxPayload struct {
 //go에서는 상속,implement가 없기 때문에
 //reseiver를 사용해서 명시 없이 implement한다
 //아래와 같이 구현하면 url이 marshaltext,
-//urldec가 string을 implement한 것이다.
+//urldes가 string을 implement한 것이다.
 func (u url) MarshalText() ([]byte, error) {
 	url := fmt.Sprintf("http://localhost%s%s", port, u)
 	return []byte(url), nil
@@ -84,7 +84,7 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllBlocks(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(blockchain.Blockchain().AllBlocks())
+	json.NewEncoder(w).Encode(blockchain.AllBlocks(blockchain.Blockchain().NewestHash))
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +102,9 @@ func getBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	encoder.Encode(block)
 }
-func status(w http.ResponseWriter, r *http.Request) {
+
+//Get Blockchain data
+func blockchainStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(blockchain.Blockchain())
 }
 
@@ -112,10 +114,10 @@ func balance(w http.ResponseWriter, r *http.Request) {
 	total := r.URL.Query().Get("total")
 	switch total {
 	case "true":
-		amount := blockchain.Blockchain().BalanceByAddress(address)
+		amount := blockchain.BalanceByAddress(address, blockchain.Blockchain())
 		json.NewEncoder(w).Encode(balanceResponse{address, amount})
 	default:
-		txOut := blockchain.Blockchain().UTxOutsByAddress(address)
+		txOut := blockchain.UTxOutsByAddress(address, blockchain.Blockchain())
 		utils.HandleError(json.NewEncoder(w).Encode(txOut))
 	}
 
@@ -140,7 +142,7 @@ func Start(aPort int) {
 	port = fmt.Sprintf(":%d", aPort)
 	router.Use(jsonContentTypeMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
-	router.HandleFunc("/blockchain", status).Methods("GET")
+	router.HandleFunc("/blockchain", blockchainStatus).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
 	router.HandleFunc("/blocks", createBlock).Methods("POST")
 	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")

@@ -20,7 +20,7 @@ const (
 var templates *template.Template
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	data := homeData{"Home", blockchain.Blockchain().AllBlocks()}
+	data := homeData{"Home", blockchain.AllBlocks(blockchain.Blockchain().NewestHash)}
 	templates.ExecuteTemplate(w, "home", data)
 }
 func addHandler(w http.ResponseWriter, r *http.Request) {

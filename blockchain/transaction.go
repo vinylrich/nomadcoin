@@ -43,7 +43,7 @@ type mempool struct {
 
 var Mempool *mempool = &mempool{}
 
-func makeConinbaseTx(address string) *Tx {
+func makeCoinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
 		{"", -1, "Coinbase"},
 	}
@@ -62,25 +62,28 @@ func makeConinbaseTx(address string) *Tx {
 
 func isOnMempool(uTxOut *UTxOut) bool {
 	exists := false
-
+Outer:
 	for _, tx := range Mempool.Txs {
 		for _, input := range tx.TxIns {
-			exists = input.TxID == uTxOut.TxID && input.Index == uTxOut.Index
+			if input.TxID == uTxOut.TxID && input.Index == uTxOut.Index {
+				exists = true
+				break Outer
+			}
 		}
 	}
 	return exists
 }
 
 func makeTx(sender, receiver string, amount int) (*Tx, error) {
-	if Blockchain().BalanceByAddress(sender) < amount {
+	if BalanceByAddress(sender, Blockchain()) < amount {
 		return nil, errors.New("not Enough money")
 	}
 	var txOuts []*TxOut
 	var txIns []*TxIn
 	total := 0
-	uTxOuts := Blockchain().UTxOutsByAddress(sender)
+	uTxOuts := UTxOutsByAddress(sender, Blockchain())
 	for _, uTxOut := range uTxOuts {
-		if total > amount {
+		if total >= amount {
 			break
 		}
 		txIn := &TxIn{uTxOut.TxID, uTxOut.Index, sender}
@@ -117,7 +120,7 @@ func (m *mempool) AddTx(to string, amount int) error {
 func (m *mempool) TxToConFirm() []*Tx {
 	//mempool에 있는 모든 transaction을 실제 transaction에 넣음
 	//mempool에 있는 데이터는 다 지움
-	coinbase := makeConinbaseTx("junwoo")
+	coinbase := makeCoinbaseTx("junwoo")
 	txs := m.Txs
 	txs = append(txs, coinbase)
 	m.Txs = nil

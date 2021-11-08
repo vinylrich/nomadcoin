@@ -22,7 +22,7 @@ type Block struct {
 func (b *Block) fromBytes(data []byte) {
 	utils.Decoding(b, data)
 }
-func (b *Block) persist() {
+func persistBlock(b *Block) {
 	db.SaveBlock(b.Hash, utils.Encoding(b))
 }
 
@@ -40,18 +40,18 @@ func (b *Block) mine() {
 		}
 	}
 }
-func createBlock(prevHash string, height int) *Block {
+func createBlock(prevHash string, difficulty, height int) *Block {
 	block := &Block{
 		Hash:       "",
 		PrevHash:   prevHash,
 		Height:     height,
-		Difficulty: Blockchain().difficulty(),
+		Difficulty: difficulty,
 		Nonce:      0,
 	}
 
 	block.mine()
 	block.Transactions = Mempool.TxToConFirm()
-	block.persist()
+	persistBlock(block)
 	return block
 }
 
