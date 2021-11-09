@@ -3,6 +3,7 @@ package blockchain
 import (
 	"errors"
 	"nomadcoin/utils"
+	"nomadcoin/wallet"
 	"time"
 )
 
@@ -60,8 +61,8 @@ func makeCoinbaseTx(address string) *Tx {
 	return &tx
 }
 
-func isOnMempool(uTxOut *UTxOut) bool {
-	exists := false
+func isOnMempool(uTxOut *UTxOut) (exists bool) {
+	exists = false
 Outer:
 	for _, tx := range Mempool.Txs {
 		for _, input := range tx.TxIns {
@@ -71,7 +72,7 @@ Outer:
 			}
 		}
 	}
-	return exists
+	return
 }
 
 func makeTx(sender, receiver string, amount int) (*Tx, error) {
@@ -108,7 +109,7 @@ func makeTx(sender, receiver string, amount int) (*Tx, error) {
 }
 
 func (m *mempool) AddTx(to string, amount int) error {
-	tx, err := makeTx("junwoo", to, amount)
+	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func (m *mempool) AddTx(to string, amount int) error {
 func (m *mempool) TxToConFirm() []*Tx {
 	//mempool에 있는 모든 transaction을 실제 transaction에 넣음
 	//mempool에 있는 데이터는 다 지움
-	coinbase := makeCoinbaseTx("junwoo")
+	coinbase := makeCoinbaseTx(wallet.Wallet().Address)
 	txs := m.Txs
 	txs = append(txs, coinbase)
 	m.Txs = nil
