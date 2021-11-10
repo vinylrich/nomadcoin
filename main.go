@@ -1,7 +1,7 @@
 package main
 
-import "nomadcoin/wallet"
+import "nomadcoin/cli"
 
 func main() {
-	wallet.Wallet()
+	cli.Start()
 }

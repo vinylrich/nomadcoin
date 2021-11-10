@@ -40,6 +40,21 @@ func persistBlockchain(b *blockchain) {
 	db.SaveBlockchain(utils.Encoding(b))
 }
 
+func AllTxs(b *blockchain) []*Tx {
+	var txs []*Tx
+	for _, block := range AllBlocks(b.NewestHash) {
+		txs = append(txs, block.Transactions...)
+	}
+	return txs
+}
+func FindTx(b *blockchain, targetID string) *Tx {
+	for _, tx := range AllTxs(b) {
+		if tx.Id == targetID {
+			return tx
+		}
+	}
+	return nil
+}
 func recalculateDifficulty(b *blockchain) int {
 	allBlocks := AllBlocks(b.NewestHash)
 	newestBlock := allBlocks[0]                              //첫 번째 블록
@@ -83,13 +98,16 @@ func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 	for _, block := range AllBlocks(b.NewestHash) { //모든 블록 불러옴
 		for _, tx := range block.Transactions { //블록 안의 모든 트랜잭션
 			for _, input := range tx.TxIns { //트랜잭션 INPUT
-				if input.Owner == address { // 인풋의 오너와 address가 동일한 것을 찾아야함
+				if input.Signature == "COINBASE" {
+					break
+				}
+				if FindTx(b, input.TxID).TxOuts[input.Index].Address == address { // 인풋의 오너와 address가 동일한 것을 찾아야함
 					//output을 생성하지 않은 input을 찾아야함
 					createrTxs[input.TxID] = true //여기에 인풋이 있다.
 				}
 			}
 			for index, output := range tx.TxOuts {
-				if output.Owner == address {
+				if output.Address == address {
 					if _, ok := createrTxs[tx.Id]; !ok {
 						uTxOut := &UTxOut{tx.Id, index, output.Amount}
 						if !isOnMempool(uTxOut) {

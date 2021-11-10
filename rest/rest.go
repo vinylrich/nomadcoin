@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"nomadcoin/blockchain"
 	"nomadcoin/utils"
+	"nomadcoin/wallet"
 
 	"github.com/gorilla/mux"
 )
@@ -26,6 +27,10 @@ type balanceResponse struct {
 type addTxPayload struct {
 	To     string `json:"to"`
 	Amount int    `json:"amount"`
+}
+
+type myWalletResponse struct {
+	Address string `json:"address"`
 }
 
 //go에서는 상속,implement가 없기 때문에
@@ -111,6 +116,10 @@ func blockchainStatus(w http.ResponseWriter, r *http.Request) {
 func balance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
+	if address == "" {
+		log.Println("no address")
+		return
+	}
 	total := r.URL.Query().Get("total")
 	switch total {
 	case "true":
@@ -137,6 +146,11 @@ func transaction(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func myWallet(w http.ResponseWriter, r *http.Request) {
+	address := wallet.Wallet().Address
+	json.NewEncoder(w).Encode(myWalletResponse{Address: address})
+}
+
 func Start(aPort int) {
 	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
@@ -148,6 +162,7 @@ func Start(aPort int) {
 	router.HandleFunc("/blocks/{hash:[a-f]+}", getBlock).Methods("GET")
 	router.HandleFunc("/balance/{address}", balance).Methods("GET")
 	router.HandleFunc("/mempool", mempool).Methods("GET")
+	router.HandleFunc("/wallet", myWallet).Methods("GET")
 	router.HandleFunc("/transaction", transaction).Methods("POST")
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))

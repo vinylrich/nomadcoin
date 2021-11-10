@@ -38,3 +38,6 @@ POST http://localhost:4000/transaction
 ###
 
 http://localhost:4000/mempool
+
+### 
+http://localhost:4000/wallet

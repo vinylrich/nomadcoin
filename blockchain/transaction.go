@@ -22,31 +22,63 @@ func (t *Tx) getId() {
 	t.Id = utils.Hash(t)
 }
 
+//save all the signature to Txinput
+//signature confirmed by public key
+//public keys are also TxOut address
+func (t *Tx) sign() {
+	for _, txIn := range t.TxIns {
+		txIn.Signature = wallet.Sign(t.Id, *wallet.Wallet())
+	}
+}
+
+func validate(t *Tx) bool {
+	valid := true
+	for _, txIn := range t.TxIns {
+		prevTx := FindTx(Blockchain(), txIn.TxID)
+		if prevTx == nil {
+			valid = false
+			break
+		}
+		address := prevTx.TxOuts[txIn.Index].Address
+		valid = wallet.Verify(t.Id, txIn.Signature, address)
+		if !valid {
+			break
+		}
+	}
+	return valid
+}
+
 type UTxOut struct {
 	TxID   string
 	Index  int
 	Amount int
 }
+
+//TxOut is only used by index of TxOut
 type TxIn struct {
-	TxID  string `json:"txId"`
-	Index int    `json:"index"`
-	Owner string `json:"owner"`
+	TxID      string `json:"txId"`
+	Index     int    `json:"index"`
+	Signature string `json:"signature"` //signature를 만들때
+	//모든 input에 서명을 함.
 }
 
 type TxOut struct {
-	Owner  string `json:"owner"`
-	Amount int    `json:"amount"`
+	Address string `json:"address"`
+	Amount  int    `json:"amount"`
 }
 
 type mempool struct {
 	Txs []*Tx
 }
 
+var ErrorNoMoney = errors.New("not Enough money")
+var ErrorTxInVaild = errors.New("Tx Invalid")
+
 var Mempool *mempool = &mempool{}
 
 func makeCoinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
-		{"", -1, "Coinbase"},
+		{"", 0, "Coinbase"},
 	}
 	txOut := []*TxOut{
 		{address, minerReward},
@@ -77,7 +109,7 @@ Outer:
 
 func makeTx(sender, receiver string, amount int) (*Tx, error) {
 	if BalanceByAddress(sender, Blockchain()) < amount {
-		return nil, errors.New("not Enough money")
+		return nil, ErrorNoMoney
 	}
 	var txOuts []*TxOut
 	var txIns []*TxIn
@@ -105,6 +137,12 @@ func makeTx(sender, receiver string, amount int) (*Tx, error) {
 		TxOuts:    txOuts,
 	}
 	tx.getId()
+	tx.sign()
+	valid := validate(tx)
+
+	if !valid {
+		return nil, ErrorTxInVaild
+	}
 	return tx, nil
 }
 

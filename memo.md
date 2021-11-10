@@ -62,3 +62,28 @@ keyPair (privateK,publicK) wallet->(private key -> file)
 4) verify
 
 ("hased_message +"signature" + publicK) -> true / false
+
+```go
+type TxIn struct {
+	TxID      string `json:"txId"`
+	Index     int    `json:"index"`
+	Signature string `json:"owner"` //signature를 만들때
+	//모든 input에 서명을 함.
+}
+
+type TxOut struct {
+	Address string `json:"owner"`
+	Amount  int    `json:"amount"`
+}
+```
+txin을 가져와 우리가 할 수 있는건 txout address는 txinput의 서명을 검증할 수 있어야 함
+
+1. 우리가 tx에 서명할 때 wallet을 private key로 서명함
+2. 근데 우리가 거짓말을 하고 있을 수도 있음
+3. tx input을 만들기 위해 필요한 tx output을 소유하지 않을 가능성이 있음
+4. validate에서 하고 있는 건 txout의 address 즉, public key를 가지고 오는 것
+
+
+그니까 트랜잭션 아웃풋은 트랜잭션 인풋을 참조하고 있음
+
+인풋에는 private key로 만들어진 signature가 있고 txinput이 tx output을 검증하기 위해서는 txout의 address인 public key로 private key를 검증해야함 

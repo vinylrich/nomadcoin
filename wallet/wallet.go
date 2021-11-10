@@ -36,7 +36,7 @@ func createPrivKey() (key *ecdsa.PrivateKey) {
 	return
 }
 
-func addFromKey(key *ecdsa.PrivateKey) string {
+func addressFromKey(key *ecdsa.PrivateKey) string {
 	return encodeBigInts(key.X.Bytes(), key.Y.Bytes())
 }
 func persistKey(key *ecdsa.PrivateKey) {
@@ -59,7 +59,7 @@ func encodeBigInts(a, b []byte) string {
 	//Privatekey의 publickey의 x,y를 합친게 address
 	return fmt.Sprintf("%x", z)
 }
-func sign(payload string, w wallet) string {
+func Sign(payload string, w wallet) string {
 	payloadAsB, err := hex.DecodeString(payload)
 	utils.HandleError(err)
 
@@ -83,7 +83,7 @@ func restoreBigInts(payload string) (*big.Int, *big.Int, error) {
 	return &bigA, &bigB, nil
 }
 
-func verify(payload, signature string, address string) bool {
+func Verify(payload string, signature string, address string) bool {
 	r, s, err := restoreBigInts(signature)
 	utils.HandleError(err)
 
@@ -112,6 +112,6 @@ func Wallet() *wallet {
 		}
 		//no -> create prv key, save to file
 	}
-	w.Address = addFromKey(w.privateKey)
+	w.Address = addressFromKey(w.privateKey)
 	return w
 }
