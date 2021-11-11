@@ -73,12 +73,13 @@ type mempool struct {
 
 var ErrorNoMoney = errors.New("not Enough money")
 var ErrorTxInVaild = errors.New("Tx Invalid")
+var ErrorzeroNotAllowed = errors.New("amount zero is invaild")
 
 var Mempool *mempool = &mempool{}
 
 func makeCoinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
-		{"", 0, "Coinbase"},
+		{"", -1, "COINBASE"},
 	}
 	txOut := []*TxOut{
 		{address, minerReward},
@@ -108,6 +109,9 @@ Outer:
 }
 
 func makeTx(sender, receiver string, amount int) (*Tx, error) {
+	if amount == 0 {
+		return nil, ErrorzeroNotAllowed
+	}
 	if BalanceByAddress(sender, Blockchain()) < amount {
 		return nil, ErrorNoMoney
 	}

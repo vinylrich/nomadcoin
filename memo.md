@@ -87,3 +87,44 @@ txin을 가져와 우리가 할 수 있는건 txout address는 txinput의 서명
 그니까 트랜잭션 아웃풋은 트랜잭션 인풋을 참조하고 있음
 
 인풋에는 private key로 만들어진 signature가 있고 txinput이 tx output을 검증하기 위해서는 txout의 address인 public key로 private key를 검증해야함 
+
+
+사람들은 나의 public key(address)에 돈을 보내고
+
+내가 그 돈을 사용할 때, 서명을 하게 됨
+
+input은 돈을 사용한다는 거고, 내 private key로 서명할 것임
+
+근데 사람들은 내가 그 돈을 가지고 있다는 것을 믿지 않음
+
+근데 사람들은 나의 public key(address)에 돈을 보냈기 때문에
+
+서명 안에 있는 private key와 public key를 사용해서 돈이 있는지 없는지 검증함
+
+
+TxOut1,TxOut2
+
+Tx
+    TxIn[
+        (TxOut1) has address - public key
+        (TxOut2) has address = public key
+    ]
+    Sign: X
+
+    verify: TxIn.Sign(using private key) + TxOut1.Address =true/false
+
+
+p2p
+
+우리가 컴퓨터(server)를 끄면 database는 살아있겠지만 블록체인 네트워크는 꺼짐 
+
+
+socket을 사용해서 실시간으로 서로를 업데이트 
+
+ex) 5개 노드가 작동하고 있으면
+
+첫 노드가 새로운 block을 찾으면 그 새로운 block이 다른 4개의 노드에게 알리고, 4개의 노드는 상태를 바꿔야 함
+
+3번째 node를 메모리 영역에서 tx하면 memory영역은 모든 네트워크에 중계되어야함
+
+이 시스템은 동시에 실행되기 때문에 channel을 사용할 때 race condition(경쟁 상태) 라는 버그가 생겨날 수 있음

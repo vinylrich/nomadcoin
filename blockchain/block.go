@@ -28,9 +28,9 @@ func persistBlock(b *Block) {
 
 func (b *Block) mine() {
 	target := strings.Repeat("0", b.Difficulty)
+	fmt.Println("Mining")
 	for {
 		hash := utils.Hash(b)
-		fmt.Printf("Target:%s\nHash:%s\nNonce:%d\n\n", target, hash, b.Nonce)
 		if strings.HasPrefix(hash, target) {
 			b.Timestamp = int(time.Now().Unix())
 			b.Hash = hash
@@ -39,6 +39,7 @@ func (b *Block) mine() {
 			b.Nonce++
 		}
 	}
+	fmt.Println("Mining End")
 }
 func createBlock(prevHash string, difficulty, height int) *Block {
 	block := &Block{

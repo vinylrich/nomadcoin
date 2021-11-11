@@ -18,7 +18,7 @@ http://localhost:4000/blocks/001639b6d16ead606a8a1a530be7d31886e18159ca4e0d5d9a1
 
 ###
 
-http://localhost:4000/balance/junwoo
+http://localhost:4000/balance/ad7aae05fd4b8731dff20c8d8f523a6d0b57b49b048eea5732a49c58fa3b379327350682a27667e7092d4b4b219bae618f89fc73170ea6e58479c522d2a35605
 
 ###
 http://localhost:4000/balance/lynn
@@ -32,7 +32,7 @@ POST http://localhost:4000/transaction
 
 {
     "to":"lynn",
-    "amount":35
+    "amount":0
 }
 
 ###
