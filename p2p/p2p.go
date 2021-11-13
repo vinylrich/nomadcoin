@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"nomadcoin/utils"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -18,7 +19,14 @@ func Upgrade(w http.ResponseWriter, r *http.Request) {
 	utils.HandleError(err)
 	for {
 		_, p, err := wsConn.ReadMessage()
-		utils.HandleError(err)
-		fmt.Printf("%s\n\n", p)
+		if err != nil {
+			wsConn.Close()
+			break
+		}
+		fmt.Printf("Just Got:%s\n\n", p)
+		time.Sleep(5 * time.Second)
+		message := fmt.Sprintf("New message: %s", p)
+		utils.HandleError(wsConn.WriteMessage(websocket.TextMessage, []byte(message)))
 	}
+
 }
