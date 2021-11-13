@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+    <script>
+        const socket = new WebSocket("ws://localhost:4000/ws");
+        socket.addEventListener("close", () => console.log("closed"));
+        setTimeout(()=>{
+            socket.send("hello darling! js < go")
+        },5000);
+        setTimeout(()=>{
+            socket.send("hello again")
+        },10000)
+        setTimeout(()=>{
+            socket.send("hello again")
+        },20000)
+    </script>
+</body>
+</html>

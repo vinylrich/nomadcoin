@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"nomadcoin/blockchain"
+	"nomadcoin/p2p"
 	"nomadcoin/utils"
 	"nomadcoin/wallet"
 
@@ -84,6 +85,11 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			Method: "GET",
 			Desc:   "Get TxOuts for an Address",
 		},
+		{
+			URL:    url("/ws"),
+			Method: "GET",
+			Desc:   "Upgrade to WebSockets",
+		},
 	}
 	json.NewEncoder(w).Encode(data)
 }
@@ -156,7 +162,7 @@ func myWallet(w http.ResponseWriter, r *http.Request) {
 func Start(aPort int) {
 	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
-	router.Use(jsonContentTypeMiddleware)
+	router.Use(jsonContentTypeMiddleware, loggerMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blockchain", blockchainStatus).Methods("GET")
 	router.HandleFunc("/blocks", getAllBlocks).Methods("GET")
@@ -166,6 +172,7 @@ func Start(aPort int) {
 	router.HandleFunc("/mempool", mempool).Methods("GET")
 	router.HandleFunc("/wallet", myWallet).Methods("GET")
 	router.HandleFunc("/transaction", transaction).Methods("POST")
+	router.HandleFunc("/ws", p2p.Upgrade).Methods("GET")
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
@@ -173,6 +180,13 @@ func Start(aPort int) {
 func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func loggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL)
 		next.ServeHTTP(w, r)
 	})
 }

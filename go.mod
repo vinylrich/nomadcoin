@@ -9,6 +9,7 @@ require (
 	github.com/evnix/boltdbweb v0.0.0-20191029203843-5b16e6623bd9 // indirect
 	github.com/gin-gonic/gin v1.7.4 // indirect
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/sys v0.0.0-20200116001909-b77594299b42 // indirect
 )
