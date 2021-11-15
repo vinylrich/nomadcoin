@@ -34,6 +34,11 @@ type myWalletResponse struct {
 	Address string `json:"address"`
 }
 
+type addPeerPayload struct {
+	Address string
+	Port    string
+}
+
 //go에서는 상속,implement가 없기 때문에
 //reseiver를 사용해서 명시 없이 implement한다
 //아래와 같이 구현하면 url이 marshaltext,
@@ -159,6 +164,18 @@ func myWallet(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(myWalletResponse{Address: address})
 }
 
+func peers(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		var payload addPeerPayload
+		json.NewDecoder(r.Body).Decode(&payload)
+		p2p.AddPeer(payload.Address, payload.Port, port)
+		w.WriteHeader(http.StatusOK)
+	case "GET":
+		json.NewEncoder(w).Encode(p2p.Peers)
+	}
+
+}
 func Start(aPort int) {
 	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
@@ -173,6 +190,7 @@ func Start(aPort int) {
 	router.HandleFunc("/wallet", myWallet).Methods("GET")
 	router.HandleFunc("/transaction", transaction).Methods("POST")
 	router.HandleFunc("/ws", p2p.Upgrade).Methods("GET")
+	router.HandleFunc("/peers", peers).Methods("GET", "POST")
 	log.Printf("ListenAndServe http://localhost%s to rest api\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
