@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -39,4 +40,11 @@ func Splitter(s string, sep string, index int) string {
 		return ""
 	}
 	return r[index]
+}
+
+func ToJSON(i interface{}) []byte {
+	r, err := json.Marshal(i)
+	HandleError(err)
+
+	return r
 }
