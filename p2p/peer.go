@@ -38,6 +38,8 @@ func AllPeers(p *peers) []string {
 }
 
 func initPeer(conn *websocket.Conn, address, port string) *peer {
+	Peers.mutex.Lock()
+	defer Peers.mutex.Unlock()
 	key := fmt.Sprintf("%s:%s", address, port)
 	p := &peer{
 		conn:    conn,
@@ -70,14 +72,19 @@ func (p *peer) read() {
 		if err != nil {
 			break
 		}
-		handleMsg(&m, p)
+		handleMsg(&m, p) //Print msg
 	}
 }
 
 func (p *peer) write() {
 	defer p.close()
 	for {
-		m := <-p.inbox
+		//write 함수에서는 messages/sendBlock()
+		//function에서 준 block byte inbox값을 받음
+		m, ok := <-p.inbox
+		if !ok {
+			break
+		}
 		p.conn.WriteMessage(websocket.TextMessage, m)
 	}
 }

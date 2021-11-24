@@ -4,6 +4,7 @@ import (
 	"errors"
 	"nomadcoin/utils"
 	"nomadcoin/wallet"
+	"sync"
 	"time"
 )
 
@@ -68,15 +69,25 @@ type TxOut struct {
 }
 
 type mempool struct {
-	Txs []*Tx
+	Txs map[string]*Tx
+	m   sync.Mutex
 }
 
 var ErrorNoMoney = errors.New("not Enough money")
 var ErrorTxInVaild = errors.New("Tx Invalid")
 var ErrorzeroNotAllowed = errors.New("amount zero is invaild")
 
-var Mempool *mempool = &mempool{}
+var m *mempool = &mempool{}
+var memOnce sync.Once
 
+func Mempool() *mempool {
+	memOnce.Do(func() {
+		m = &mempool{
+			Txs: make(map[string]*Tx),
+		}
+	})
+	return m
+}
 func makeCoinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
 		{"", -1, "COINBASE"},
@@ -97,7 +108,7 @@ func makeCoinbaseTx(address string) *Tx {
 func isOnMempool(uTxOut *UTxOut) (exists bool) {
 	exists = false
 Outer:
-	for _, tx := range Mempool.Txs {
+	for _, tx := range Mempool().Txs {
 		for _, input := range tx.TxIns {
 			if input.TxID == uTxOut.TxID && input.Index == uTxOut.Index {
 				exists = true
@@ -150,22 +161,31 @@ func makeTx(sender, receiver string, amount int) (*Tx, error) {
 	return tx, nil
 }
 
-func (m *mempool) AddTx(to string, amount int) error {
+func (m *mempool) AddTx(to string, amount int) (*Tx, error) {
 	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	m.Txs = append(m.Txs, tx)
-	return nil
+	m.Txs[tx.Id] = tx
+	return tx, nil
 }
 
 func (m *mempool) TxToConFirm() []*Tx {
 	//mempool에 있는 모든 transaction을 실제 transaction에 넣음
 	//mempool에 있는 데이터는 다 지움
 	coinbase := makeCoinbaseTx(wallet.Wallet().Address)
-	txs := m.Txs
+	var txs []*Tx
+	for _, tx := range m.Txs {
+		txs = append(txs, tx)
+	}
 	txs = append(txs, coinbase)
-	m.Txs = nil
+	m.Txs = make(map[string]*Tx) //make new empty map
 	return txs
+}
+func (m *mempool) AddPeerTx(tx *Tx) {
+	m.m.Lock()
+	defer m.m.Unlock()
+
+	m.Txs[tx.Id] = tx
 }

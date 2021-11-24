@@ -100,11 +100,12 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllBlocks(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(blockchain.AllBlocks(blockchain.Blockchain().NewestHash))
+	json.NewEncoder(w).Encode(blockchain.AllBlocks(blockchain.Blockchain()))
 }
 
 func createBlock(w http.ResponseWriter, r *http.Request) {
-	blockchain.Blockchain().AddBlock()
+	newBlock := blockchain.Blockchain().AddBlock()
+	p2p.BroadcastNewBlock(newBlock)
 	w.WriteHeader(http.StatusCreated)
 }
 func getBlock(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +122,7 @@ func getBlock(w http.ResponseWriter, r *http.Request) {
 
 //Get Blockchain data
 func blockchainStatus(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(blockchain.Blockchain())
+	blockchain.Status(blockchain.Blockchain(), w)
 }
 
 func balance(w http.ResponseWriter, r *http.Request) {
@@ -144,18 +145,20 @@ func balance(w http.ResponseWriter, r *http.Request) {
 }
 
 func mempool(w http.ResponseWriter, r *http.Request) {
-	utils.HandleError(json.NewEncoder(w).Encode(blockchain.Mempool.Txs))
+	utils.HandleError(json.NewEncoder(w).Encode(blockchain.Mempool().Txs))
 }
 
 func transaction(w http.ResponseWriter, r *http.Request) {
 	payload := &addTxPayload{}
 	utils.HandleError(json.NewDecoder(r.Body).Decode(&payload))
-	err := blockchain.Mempool.AddTx(payload.To, payload.Amount)
+	tx, err := blockchain.Mempool().AddTx(payload.To, payload.Amount)
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errorResponse{ErrorMessage: err.Error()})
 		return
 	}
+	p2p.BroadcastNewTx(tx)
 	w.WriteHeader(http.StatusCreated)
 }
 

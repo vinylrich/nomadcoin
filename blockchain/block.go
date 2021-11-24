@@ -41,7 +41,7 @@ func (b *Block) mine() {
 	}
 	fmt.Println("Mining End")
 }
-func createBlock(prevHash string, difficulty, height int) *Block {
+func createBlock(prevHash string, height, difficulty int) *Block {
 	block := &Block{
 		Hash:       "",
 		PrevHash:   prevHash,
@@ -51,7 +51,7 @@ func createBlock(prevHash string, difficulty, height int) *Block {
 	}
 
 	block.mine()
-	block.Transactions = Mempool.TxToConFirm()
+	block.Transactions = Mempool().TxToConFirm()
 	persistBlock(block)
 	return block
 }

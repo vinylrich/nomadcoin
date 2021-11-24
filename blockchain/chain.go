@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"encoding/json"
+	"net/http"
 	"nomadcoin/db"
 	"nomadcoin/utils"
 	"sync"
@@ -10,6 +12,7 @@ type blockchain struct {
 	NewestHash        string `json:"newestHash"`
 	Height            int    `json:"height"`
 	CurrentDifficulty int    `json:"currendifficulty"`
+	m                 sync.Mutex
 }
 
 //함수가 구조체를 변화시킨다면 함수는 메서드여야함
@@ -28,12 +31,13 @@ var once sync.Once
 func (b *blockchain) decoding(data []byte) {
 	utils.Decoding(b, data)
 }
-func (b *blockchain) AddBlock() {
+func (b *blockchain) AddBlock() *Block {
 	block := createBlock(b.NewestHash, b.Height+1, difficulty(b))
 	b.NewestHash = block.Hash
 	b.Height = block.Height
 	b.CurrentDifficulty = block.Difficulty
 	persistBlockchain(b)
+	return block
 }
 
 func persistBlockchain(b *blockchain) {
@@ -42,7 +46,7 @@ func persistBlockchain(b *blockchain) {
 
 func AllTxs(b *blockchain) []*Tx {
 	var txs []*Tx
-	for _, block := range AllBlocks(b.NewestHash) {
+	for _, block := range AllBlocks(b) {
 		txs = append(txs, block.Transactions...)
 	}
 	return txs
@@ -56,7 +60,7 @@ func FindTx(b *blockchain, targetID string) *Tx {
 	return nil
 }
 func recalculateDifficulty(b *blockchain) int {
-	allBlocks := AllBlocks(b.NewestHash)
+	allBlocks := AllBlocks(b)
 	newestBlock := allBlocks[0]                              //첫 번째 블록
 	lastRecalculatedBlock := allBlocks[difficultyInterval-1] //5번째 블록
 	actualTime := (newestBlock.Timestamp / 60) - (lastRecalculatedBlock.Timestamp / 60)
@@ -95,7 +99,7 @@ func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 	var uTxOuts []*UTxOut
 	//아직 사용되지 않은 output
 	createrTxs := make(map[string]bool)
-	for _, block := range AllBlocks(b.NewestHash) { //모든 블록 불러옴
+	for _, block := range AllBlocks(b) { //모든 블록 불러옴
 		for _, tx := range block.Transactions { //블록 안의 모든 트랜잭션
 			for _, input := range tx.TxIns { //트랜잭션 INPUT
 				if input.Signature == "COINBASE" {
@@ -121,9 +125,11 @@ func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 	return uTxOuts
 }
 
-func AllBlocks(newestHash string) []*Block {
+func AllBlocks(b *blockchain) []*Block {
+	b.m.Lock()
+	defer b.m.Unlock()
 	var blocks []*Block
-	hashCursor := newestHash
+	hashCursor := b.NewestHash
 	for {
 		block, _ := FindBlock(hashCursor)
 		blocks = append(blocks, block)
@@ -162,4 +168,47 @@ func Blockchain() *blockchain {
 		}
 	})
 	return b
+}
+
+func (b *blockchain) Replace(blocks []*Block) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	b.CurrentDifficulty = blocks[0].Difficulty
+	b.Height = len(blocks)
+	b.NewestHash = blocks[0].Hash
+	persistBlockchain(b)
+	db.EmptyBlocks()
+	for _, block := range blocks {
+		persistBlock(block)
+	}
+
+}
+
+func Status(b *blockchain, w http.ResponseWriter) {
+	b.m.Lock()
+	defer b.m.Unlock()
+
+	utils.HandleError(json.NewEncoder(w).Encode(b))
+}
+
+func (b *blockchain) AddPeerBlock(block *Block) {
+	b.m.Lock()
+	m.m.Lock()
+	defer b.m.Unlock()
+	defer m.m.Unlock()
+	b.Height += 1
+	b.CurrentDifficulty = block.Difficulty
+	b.NewestHash = block.Hash
+
+	persistBlockchain(b)
+	persistBlock(block)
+
+	for _, tx := range block.Transactions {
+		_, ok := m.Txs[tx.Id]
+		if ok {
+			delete(m.Txs, tx.Id)
+		}
+	}
+	// mempool
+
 }
