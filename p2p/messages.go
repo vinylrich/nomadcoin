@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"nomadcoin/blockchain"
 	"nomadcoin/utils"
+	"strings"
 )
 
 type MessageKind int
@@ -101,7 +102,9 @@ func handleMsg(m *Message, p *peer) {
 	case MessageBroadCastNewPeer:
 		var payload string
 		utils.HandleError(json.Unmarshal(m.Payload, &payload))
-		fmt.Printf("I will now /ws upgrade %s", payload)
+		fmt.Println(payload)
+		parts := strings.Split(payload, ":")
+		AddPeer(parts[0], parts[1], parts[2], false)
 	}
 
 }

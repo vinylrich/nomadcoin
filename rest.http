@@ -43,12 +43,12 @@ http://localhost:4000/mempool
 http://localhost:4000/wallet
 
 ###
-POST http://localhost:3000/peers
+POST http://localhost:2000/peers
 
 {
     "address" : "127.0.0.1",
-    "port" : "2000"
+    "port" : "5000"
 }
 ###
 
-http://localhost:4000/peers
+http://localhost:2000/peers

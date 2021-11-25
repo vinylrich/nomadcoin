@@ -30,11 +30,11 @@ func Upgrade(w http.ResponseWriter, r *http.Request) {
 // Port :4000 is reqeuesting an upgrade form the port :3000
 func AddPeer(address, port, openPort string, broadcast bool) {
 	fmt.Printf("%s to connect to port %s\n", openPort, port)
-	wsConn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:%s/ws?openPort=%s", address, port, openPort[1:]), nil)
+	wsConn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:%s/ws?openPort=%s", address, port, openPort), nil)
 	utils.HandleError(err)
 	//Starting initPeer function, read,write with go routine
 	peer := initPeer(wsConn, address, port) //conntect peer
-	if !broadcast {
+	if broadcast {
 		broadcastNewPeer(peer)
 		return
 	}
@@ -62,7 +62,7 @@ func broadcastNewPeer(newPeer *peer) {
 	for key, p := range Peers.Value {
 		if key != newPeer.key {
 			payload := fmt.Sprintf("%s:%s", newPeer.key, p.port)
-			notifyNewPeer(newPeer.key, p)
+			notifyNewPeer(payload, p)
 		}
 	}
 }
