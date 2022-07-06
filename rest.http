@@ -28,7 +28,7 @@ http://localhost:4000/balance/junwoo?total=true
 
 ###
 
-POST http://localhost:4000/transaction
+POST http://localhost:5000/transaction
 
 {
     "to":"lynn",
@@ -43,12 +43,12 @@ http://localhost:4000/mempool
 http://localhost:4000/wallet
 
 ###
-POST http://localhost:2000/peers
+POST http://localhost:5000/peers
 
 {
     "address" : "127.0.0.1",
-    "port" : "5000"
+    "port" : "4000"
 }
 ###
 
-http://localhost:2000/peers
+http://localhost:5000/peers

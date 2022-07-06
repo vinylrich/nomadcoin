@@ -45,6 +45,5 @@ func Splitter(s string, sep string, index int) string {
 func ToJSON(i interface{}) []byte {
 	r, err := json.Marshal(i)
 	HandleError(err)
-
 	return r
 }
